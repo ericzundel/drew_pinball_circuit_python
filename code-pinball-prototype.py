@@ -138,6 +138,10 @@ def update_score():
     lcd.print(str(score))
 
 def handle_targets():
+    # Since we want to modify the global score, we have to declare it
+    # with the global keyword here.
+    global score
+
     for target_num in range(0,len(target_switches)):
         if (target_switches[target_num].value == True):
             # The input has a pull up, so this means the target is not pressed
@@ -147,10 +151,23 @@ def handle_targets():
             # The button is pulled to ground, so the target is pressed
             led_strips[target_num].fill(RED)
             led_strips[target_num].show()
-            score = score + 100
+            # TODO(ericzundel): debounce switch so we don't run up the score
+            score += 100
 
 def handle_bumpers():
-    pass
+    # Since we want to modify the global score, we have to declare it
+    # with the global keyword here.
+    global score
+
+    for bumper_num in range(0,len(bumper_switches)):
+        if (bumper_switches[target_num].value == True):
+            # The input has a pull up, so this means the target is not pressed
+            bumper_solenoid[target_num].value = False
+        else:
+            # The button is pulled to ground, so the target is pressed
+            bumper_solenoid[target_num].value = True
+            # TODO(ericzundel): debounce switch so we don't run up the score
+            score += 10
 
 def update_status_led():
     fractional_secs = time.monotonic() % 1
