@@ -1,21 +1,20 @@
-# SPDX-FileCopyrightText: 2018 Kattni Rembor for Adafruit Industries
-#
-# SPDX-License-Identifier: MIT
+# code-target-and-neopixel.py
+# Author: Eric Z. Ayers <ericzundel@gmail.com>
+"""Shows how to read a switch attached to a target and light a Neopixel Strip"""
 
-"""CircuitPython Essentials NeoPixel example"""
 import time
 import board
+# For more information on how to use digitalio on Circuit Python, see
+# https://learn.adafruit.com/circuitpython-essentials/circuitpython-digital-in-out
 from digitalio import DigitalInOut, Direction, Pull
+# For more information on how to use the neopixel library on Circuit Python, see
+# https://learn.adafruit.com/circuitpython-essentials/circuitpython-neopixel
 import neopixel
 
 # Here are some RGB values for some common colors.
 # 0 == LED off and 255 == full brightness
 RED    = (255,   0,   0) # 100% red,   0% green, 0% blue
-GREEN  = (  0, 255,   0) #   0% red, 100% green, 0% blue
-BLUE   = (  0,   0, 255) # 100% blue
-WHITE  = (100, 100, 100) # 100% of all colors
 BLACK  = (  0,   0,   0) # 0% of all colors (turns the LED off)
-
 
 #Initialize the target pins
 target1_switch = DigitalInOut(board.GP11)
