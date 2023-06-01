@@ -30,14 +30,29 @@ score = 0
 i2c = busio.I2C(board.GP1, board.GP0)
 lcd = LCD(I2CPCF8574Interface(i2c, 0x27), num_rows=2, num_cols=20)
 
+# Status LED that blinks so you can tell the code is running
+status_led = DigitalInOut(board.GP15)
+
+# Create an array to hold array of Neopixel strip objects
+led_strips = [
+    neopixel.NeoPixel(board.GP16, 10, brightness=0.3, auto_write=False),
+    neopixel.NeoPixel(board.GP17, 10, brightness=0.3, auto_write=False),
+    neopixel.NeoPixel(board.GP18, 10, brightness=0.3, auto_write=False),
+    neopixel.NeoPixel(board.GP19, 10, brightness=0.3, auto_write=False),
+    neopixel.NeoPixel(board.GP20, 10, brightness=0.3, auto_write=False),
+    neopixel.NeoPixel(board.GP21, 10, brightness=0.3, auto_write=False)
+]
+
 # Create an array to hold the flipper solenoid output objects
 flipper_solenoids = [
     DigitalInOut(board.GP2),
+    DigitalInOut(board.GP3)
 ]
 
-# Create an array to hold the flipper switch objects
-flipper_switches = [
+# Create an array to hold the flipper button objects
+flipper_buttons = [
     DigitalInOut(board.GP4),
+    DigitalInOut(board.GP5)
 ]
 
 # Create an array to hold the target swtich objects
@@ -60,12 +75,23 @@ BLACK  = (  0,   0,   0) # 0% of all colors (turns the LED off)
 
 # setup(): runs one time when the processor starts up
 def setup():
+    print("setup()")
+
+    # initialize status LED
+    status_led.direction = Direction.OUTPUT
+    status_led.direction = Direction.OUTPUT
+    status_led.value = True
+
     # initialize neopixels
+    # Turn off all the LED strips
+    for led_strip in led_strips:
+        led_strip.fill(BLACK)
+        led_strip.show()
 
     # initialize targets
     for target_switch in target_switches:
-        target1_switch.direction = Direction.INPUT
-        target1_switch.pull = Pull.UP
+        target_switch.direction = Direction.INPUT
+        target_switch.pull = Pull.UP
 
     # initialize flippers solenoids
     for flipper_button in flipper_buttons:
@@ -83,18 +109,18 @@ def setup():
 
     # initialize lcd
     lcd.set_backlight(True)
-
-    # Initialize the flipper button as an input
-
+    update_score()
 
 def handle_flippers():
-    if (flipper1_button.value == True):
-        # The input has a pull up, so this means
-        # the value is True when the button is not pressed
-        flipper1_solenoid.value = False
-    else:
-        # The button is pulled to ground, so the switch is pressed
-        flipper1_solenoid.value = True
+    for flipper_num in range(0, len(flipper_buttons)):
+        if (flipper_buttons[flipper_num].value == True):
+            # The input has a pull up, so this means
+            # the value is True when the button is not pressed
+            flipper_solenoids[flipper_num].value = False
+        else:
+            print("Flipper " + str(flipper_num) + " is activated.")
+            # The button is pulled to ground, so the switch is pressed
+            flipper_solenoids[flipper_num].value = True
 
 
 def update_score():
@@ -112,26 +138,47 @@ def update_score():
     lcd.print(str(score))
 
 def handle_targets():
+    for target_num in range(0,len(target_switches)):
+        if (target_switches[target_num].value == True):
+            # The input has a pull up, so this means the target is not pressed
+            led_strips[target_num].fill(BLACK)
+            led_strips[target_num].show()
+        else:
+            # The button is pulled to ground, so the target is pressed
+            led_strips[target_num].fill(RED)
+            led_strips[target_num].show()
+            score = score + 100
+
+def handle_bumpers():
+    pass
+
+def update_status_led():
+    fractional_secs = time.monotonic() % 1
+
+    # Blink on 2x per second
+    if ((fractional_secs > 0 and fractional_secs < .25)
+    or (fractional_secs > .5 and fractional_secs < .75)):
+        status_led.value = True
+    else:
+        status_led.value = False
+
+def main_loop():
+    old_score = score
+
+    update_status_led()
+    handle_flippers()
+    handle_targets()
+    handle_bumpers()
+
+    if (score != old_score):
+        update_score()
+
+#####################################################################
+# No need to edit below here. This code just enforces that setup()
+# runs once and main_loop() is called repeatedly.
 
 
-#Initialize the neopixel strip
-# ** Change this value to connnect the DIN wire on the Neopixel strip to a different pin on the Pico
-led_strip1_pin = board.GP16
-# ** Change this number to be the number of LEDs on your strips
-led_strip1_num_pixels = 10
-# This line initialized the library used to control the neopixel strip
-led_strip1 = neopixel.NeoPixel(led_strip1_pin, led_strip1_num_pixels, brightness=0.3, auto_write=False)
-
-led_strip1.fill(BLACK)
-led_strip1.show()
+setup()
 
 while True:
-    if (target1_switch.value == True):
-        # The input has a pull up, so this means the target is not pressed
-        led_strip1.fill(BLACK)
-        led_strip1.show()
-    else:
-        # The button is pulled to ground, so the target is pressed
-        led_strip1.fill(RED)
-        led_strip1.show()
-        time.sleep(.25)
+    main_loop()
