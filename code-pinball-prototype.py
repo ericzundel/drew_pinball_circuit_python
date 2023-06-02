@@ -64,9 +64,31 @@ target_switches = [
     DigitalInOut(board.GP7)
 ]
 
+target_to_led_map = [
+    0,
+    5,  # Target 2 triggers LED 6
+    4,  # Target 3 triggers LED 5
+    3, # Target 4 triggers LED 4
+    2, # Target 5 triggers LED 3
+]
+
+bumper_switches = [
+    DigitalInOut(board.GP13)
+]
+
+bumper_solenoids = [
+    DigitalInOut(board.GP12)
+]
+
+bumper_to_led_map = [
+  1  # Bumper 1 controls LED strip 2
+]
+
 # Here are some RGB values for some common colors.
 # 0 == LED off and 255 == full brightness
-RED    = (255,   0,   0) # 100% red,   0% green, 0% blue
+RED    = (255,   0,   0) # 100% red,   0% green,   0% blue
+BLUE   = (  0,   0, 255) #   0% red,   0% green, 100% blue
+
 BLACK  = (  0,   0,   0) # 0% of all colors (turns the LED off)
 
 # End global variables
@@ -78,7 +100,6 @@ def setup():
     print("setup()")
 
     # initialize status LED
-    status_led.direction = Direction.OUTPUT
     status_led.direction = Direction.OUTPUT
     status_led.value = True
 
@@ -103,9 +124,15 @@ def setup():
         flipper_solenoid.direction = Direction.OUTPUT
         flipper_solenoid.value = False
 
-    # initialize bumper solenoids
-
     # initialize bumper switches
+    for bumper_button in bumper_switches:
+        bumper_button.direction = Direction.INPUT
+        bumper_button.pull = Pull.UP
+
+    # initialize bumper solenoids
+    for bumper_solenoid in bumper_solenoids:
+        bumper_solenoid.direction = Direction.OUTPUT
+        bumper_solenoid.value = False
 
     # initialize lcd
     lcd.set_backlight(True)
@@ -120,6 +147,7 @@ def handle_flippers():
         else:
             print("Flipper " + str(flipper_num) + " is activated.")
             # The button is pulled to ground, so the switch is pressed
+            flipper_solenoids[flipper_num].value = True
             flipper_solenoids[flipper_num].value = True
 
 
@@ -143,14 +171,15 @@ def handle_targets():
     global score
 
     for target_num in range(0,len(target_switches)):
+        led_num = target_to_led_map[target_num]
         if (target_switches[target_num].value == True):
             # The input has a pull up, so this means the target is not pressed
-            led_strips[target_num].fill(BLACK)
-            led_strips[target_num].show()
+            led_strips[led_num].fill(BLACK)
+            led_strips[led_num].show()
         else:
             # The button is pulled to ground, so the target is pressed
-            led_strips[target_num].fill(RED)
-            led_strips[target_num].show()
+            led_strips[led_num].fill(RED)
+            led_strips[led_num].show()
             # TODO(ericzundel): debounce switch so we don't run up the score
             score += 100
 
@@ -160,12 +189,18 @@ def handle_bumpers():
     global score
 
     for bumper_num in range(0,len(bumper_switches)):
-        if (bumper_switches[target_num].value == True):
+        #print("bumper" + str(bumper_num))
+        led_num = bumper_to_led_map[bumper_num]
+        if (bumper_switches[bumper_num].value == True):
             # The input has a pull up, so this means the target is not pressed
-            bumper_solenoid[target_num].value = False
+            bumper_solenoids[bumper_num].value = False
+            led_strips[led_num].fill(BLACK)
+            led_strips[led_num].show()
         else:
             # The button is pulled to ground, so the target is pressed
-            bumper_solenoid[target_num].value = True
+            bumper_solenoids[bumper_num].value = True
+            led_strips[led_num].fill(BLUE)
+            led_strips[led_num].show()
             # TODO(ericzundel): debounce switch so we don't run up the score
             score += 10
 
